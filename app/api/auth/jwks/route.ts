@@ -13,6 +13,7 @@ import { getSingpassRpPublicJwks } from "@/lib/singpassKeys";
 // available at all times - if this endpoint is slow or down, users will
 // fail to log in via Singpass.
 export async function GET() {
+  console.log("Getting JWKS");
   const jwks = getSingpassRpPublicJwks();
   return NextResponse.json(jwks);
 }
