@@ -1,0 +1,34 @@
+{
+  "name": "login-with-singpass-next",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:local": "dotenv -e .env.local -- next dev -p 8000",
+    "dev:staging": "dotenv -e .env.staging -- next dev -p 8000",
+    "build": "next build",
+    "build:local": "dotenv -e .env.local -- next build",
+    "build:staging": "dotenv -e .env.staging -- next build",
+    "start": "next start",
+    "start:local": "dotenv -e .env.local -- next start",
+    "start:staging": "dotenv -e .env.staging -- next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "next": "16.2.12",
+    "openid-client": "^6.8.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.12",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

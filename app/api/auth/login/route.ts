@@ -1,0 +1,57 @@
+import { NextResponse } from "next/server";
+import {
+  randomPKCECodeVerifier,
+  calculatePKCECodeChallenge,
+  randomState,
+  randomNonce,
+  buildAuthorizationUrlWithPAR,
+} from "openid-client";
+import { getSingpassConfiguration } from "@/lib/singpassIssuer";
+import { getSingpassDPoPHandle } from "@/lib/singpassDPoP";
+import { singpassConfig } from "@/lib/singpassConfig";
+
+// GET /api/auth/login
+// generate PKCE + state + nonce, send the PAR
+// request (server-to-server, signed with our client assertion + DPoP proof),
+// then redirect the browser to Singpass's /auth endpoint with just
+// client_id + request_uri - no sensitive params exposed in the URL.
+export async function GET() {
+  const configuration = await getSingpassConfiguration();
+  const dpopHandle = await getSingpassDPoPHandle();
+
+  const code_verifier = randomPKCECodeVerifier();
+  const code_challenge = await calculatePKCECodeChallenge(code_verifier);
+  const state = randomState();
+  const nonce = randomNonce();
+
+  const redirectTo = await buildAuthorizationUrlWithPAR(
+    configuration,
+    {
+      redirect_uri: singpassConfig.redirectUri,
+      code_challenge_method: "S256",
+      code_challenge,
+      nonce,
+      state,
+      scope: "openid", // login-only for now; add MyInfo scopes later if needed
+    },
+    { DPoP: dpopHandle },
+  );
+
+  const res = NextResponse.redirect(redirectTo.href);
+
+  // These need to survive the round trip to Singpass and back, so they go
+  // in httpOnly cookies - never exposed to client-side JS. Short maxAge
+  // since the whole login flow should complete in well under 5 minutes.
+  const cookieOpts = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: 300,
+  };
+  res.cookies.set("sp_verifier", code_verifier, cookieOpts);
+  res.cookies.set("sp_state", state, cookieOpts);
+  res.cookies.set("sp_nonce", nonce, cookieOpts);
+
+  return res;
+}
