@@ -79,3 +79,23 @@ export function getSingpassRpKeys() {
   }
   return keysPromise;
 }
+
+// Public JWKS view of our own signing + encryption keys - this is what
+// Singpass fetches from our hosted jwks_uri to verify our client_assertion
+// signatures and to encrypt the ID token/userinfo response to us. Strips the
+// private `d` component - only the public x/y coordinates ever leave this
+// process.
+export function getSingpassRpPublicJwks() {
+  const sigJwk = parseJwkEnv(
+    "SINGPASS_RP_SIGNING_KEY_JWK",
+    singpassConfig.rpSigningKeyJwk,
+  );
+  const encJwk = parseJwkEnv(
+    "SINGPASS_RP_ENCRYPTION_KEY_JWK",
+    singpassConfig.rpEncryptionKeyJwk,
+  );
+
+  const toPublic = ({ d, ...publicJwk }: KeyJwk) => publicJwk;
+
+  return { keys: [toPublic(sigJwk), toPublic(encJwk)] };
+}
