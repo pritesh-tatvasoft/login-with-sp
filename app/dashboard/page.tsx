@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
-import type { CSSProperties } from "react";
 
 // Server component - reads the httpOnly session cookie directly, no client
 // JS needed to see the claims. This is purely a POC diagnostic view - in
@@ -9,6 +8,8 @@ import type { CSSProperties } from "react";
 export default async function DashboardPage() {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("app_session");
+
+  console.log("sessionCookie", sessionCookie);
 
   if (!sessionCookie) {
     return (
@@ -23,6 +24,7 @@ export default async function DashboardPage() {
   let session: { sub: string; claims: Record<string, unknown> };
   try {
     session = JSON.parse(sessionCookie.value);
+    console.log("session", session);
   } catch {
     return (
       <main style={{ padding: 40, fontFamily: "sans-serif" }}>
@@ -33,69 +35,93 @@ export default async function DashboardPage() {
     );
   }
 
-  const attrs = (session.claims.sub_attributes ?? {}) as Record<
-    string,
-    unknown
-  >;
+  const attrs = (session.claims.sub_attributes ?? {}) as Record<string, unknown>;
+
+  const formatUnix = (ts: unknown) => {
+    const n = typeof ts === "number" ? ts : Number(ts);
+    if (!Number.isFinite(n)) return "-";
+    return new Date(n * 1000).toLocaleString();
+  };
+
+  const humanize = (key: string) =>
+    key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const identityItems = Object.entries(attrs).map(([key, value]) => ({
+    key,
+    label: humanize(key),
+    value: String(value ?? "-"),
+  }));
+
+  const authDetails = [
+    { label: "User ID (sub)", value: session.sub },
+    { label: "Audience (aud)", value: String(session.claims.aud ?? "-") },
+    { label: "Authentication Context (acr)", value: String(session.claims.acr ?? "-") },
+    { label: "Subject Type", value: String(session.claims.sub_type ?? "-") },
+    {
+      label: "Auth Methods (amr)",
+      value: Array.isArray(session.claims.amr)
+        ? session.claims.amr.join(", ")
+        : String(session.claims.amr ?? "-"),
+    },
+    { label: "Issuer", value: String(session.claims.iss ?? "-") },
+    {
+      label: "Issued At",
+      value: `${String(session.claims.iat ?? "-")} (${formatUnix(session.claims.iat)})`,
+    },
+    {
+      label: "Expires At",
+      value: `${String(session.claims.exp ?? "-")} (${formatUnix(session.claims.exp)})`,
+    },
+    { label: "Nonce", value: String(session.claims.nonce ?? "-") },
+  ];
 
   return (
-    <main style={{ padding: 40, fontFamily: "sans-serif", maxWidth: 640 }}>
-      <h1>Logged in via Singpass</h1>
+    <main className="min-h-screen bg-slate-50 p-6 md:p-12">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-10">
+        <header className="mb-8 border-b border-slate-200 pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Welcome back</h1>
+            <p className="text-slate-500 mt-2">Logged in via Singpass</p>
+          </div>
+          <Link
+            href="/api/auth/logout"
+            className="inline-flex items-center px-5 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition"
+          >
+            Logout
+          </Link>
+        </header>
 
-      <section style={{ marginTop: 24 }}>
-        <h2>Identity</h2>
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
-          <tbody>
-            <tr>
-              <td style={cellLabel}>Name</td>
-              <td style={cellValue}>{String(attrs.name ?? "-")}</td>
-            </tr>
-            <tr>
-              <td style={cellLabel}>NRIC/FIN</td>
-              <td style={cellValue}>{String(attrs.identity_number ?? "-")}</td>
-            </tr>
-            <tr>
-              <td style={cellLabel}>Country of issuance</td>
-              <td style={cellValue}>{String(attrs.identity_coi ?? "-")}</td>
-            </tr>
-            <tr>
-              <td style={cellLabel}>Sub (stable user id)</td>
-              <td style={cellValue}>{session.sub}</td>
-            </tr>
-            <tr>
-              <td style={cellLabel}>Auth level (acr)</td>
-              <td style={cellValue}>{String(session.claims.acr ?? "-")}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Identity</h2>
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            {identityItems.map(({ key, label, value }) => (
+              <div key={key} className="grid grid-cols-1 md:grid-cols-3 border-b last:border-b-0 border-slate-200">
+                <dt className="px-4 py-3 bg-slate-50 text-slate-600 font-medium text-sm">{label}</dt>
+                <dd className="px-4 py-3 md:col-span-2 text-slate-900 wrap-break-word">{value}</dd>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <section style={{ marginTop: 32 }}>
-        <h2>Raw ID token claims</h2>
-        <pre
-          style={{
-            padding: 16,
-            borderRadius: 8,
-          }}
-        >
-          {JSON.stringify(session.claims, null, 2)}
-        </pre>
-      </section>
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Authentication details</h2>
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            {authDetails.map(({ label, value }) => (
+              <div key={label} className="grid grid-cols-1 md:grid-cols-3 border-b last:border-b-0 border-slate-200">
+                <dt className="px-4 py-3 bg-slate-50 text-slate-600 font-medium text-sm">{label}</dt>
+                <dd className="px-4 py-3 md:col-span-2 text-slate-900 wrap-break-word">{value}</dd>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <p style={{ marginTop: 32 }}>
-        <Link href="/api/auth/logout">Logout</Link>
-      </p>
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Raw ID token claims</h2>
+          <pre className="bg-slate-100 p-4 rounded-lg overflow-x-auto text-sm font-mono text-slate-700">
+            {JSON.stringify(session.claims, null, 2)}
+          </pre>
+        </section>
+      </div>
     </main>
   );
 }
-
-const cellLabel: CSSProperties = {
-  padding: "8px 12px",
-  borderBottom: "1px solid #ddd",
-  fontWeight: 600,
-  width: "40%",
-};
-const cellValue: CSSProperties = {
-  padding: "8px 12px",
-  borderBottom: "1px solid #ddd",
-};
