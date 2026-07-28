@@ -13,8 +13,8 @@ import { singpassConfig } from "@/lib/singpassConfig";
 // GET /api/auth/login
 // generate PKCE + state + nonce, send the PAR
 // request (server-to-server, signed with our client assertion + DPoP proof),
-// then redirect the browser to Singpass's /auth endpoint with just
-// client_id + request_uri - no sensitive params exposed in the URL.
+// then return the Singpass /auth URL in JSON so the frontend can redirect
+// the browser - no sensitive params exposed in the URL.
 export async function GET() {
   const configuration = await getSingpassConfiguration();
   const dpopHandle = await getSingpassDPoPHandle();
@@ -37,7 +37,7 @@ export async function GET() {
     { DPoP: dpopHandle },
   );
 
-  const res = NextResponse.redirect(redirectTo.href);
+  const res = NextResponse.json({ url: redirectTo.href });
 
   // These need to survive the round trip to Singpass and back, so they go
   // in httpOnly cookies - never exposed to client-side JS. Short maxAge
