@@ -94,6 +94,17 @@ export async function GET(req: NextRequest) {
       throw new Error("ID token claims are undefined");
     }
 
+    // Debug-only: dump everything we got back from the token exchange +
+    // decrypted/verified ID token claims. Remove before going to production
+    // - claims contain PII (NRIC/FIN, name, etc.) and shouldn't sit in logs.
+    console.log("Singpass token response:", {
+      access_token: tokens.access_token,
+      token_type: tokens.token_type,
+      expires_in: tokens.expires_in,
+      id_token: tokens.id_token,
+    });
+    console.log("Singpass ID token claims:", claims);
+
     // claims.sub is Singpass's stable identifier for this user.
     // claims.sub_attributes.identity_number carries the actual NRIC/FIN
     // (MockPass-specific shape - confirm this against the real staging
