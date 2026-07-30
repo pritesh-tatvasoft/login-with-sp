@@ -14,6 +14,15 @@ import { singpassConfig } from "@/lib/singpassConfig";
 // claims from it. This route returns JSON - it never redirects itself -
 // the frontend page decides where to send the browser next.
 export async function GET(req: NextRequest) {
+  // If the user already has a session, this is most likely a re-visit of
+  // this URL - e.g. browser back/forward or a refresh after a successful
+  // login - replaying a `code` that's already been consumed and cookies
+  // that have already been cleaned up. Don't attempt the exchange again;
+  // just tell the frontend where to go.
+  if (req.cookies.get("app_session")) {
+    return NextResponse.json({ ok: true, redirectTo: "/dashboard" });
+  }
+
   const currentUrl = new URL(req.url);
 
   // openid-client derives the token endpoint's `redirect_uri` from this URL.
