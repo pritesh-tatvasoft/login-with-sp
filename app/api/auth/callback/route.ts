@@ -46,10 +46,7 @@ export async function GET(req: NextRequest) {
       console.error(
         `Singpass callback iss mismatch: expected ${expectedIss}, got ${returnedIss}`,
       );
-      return NextResponse.json(
-        { error: "unexpected_issuer" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "unexpected_issuer" }, { status: 400 });
     }
   }
 
@@ -69,7 +66,10 @@ export async function GET(req: NextRequest) {
   const nonce = req.cookies.get("sp_nonce")?.value;
 
   if (!code_verifier || !state || !nonce) {
-    return NextResponse.json({ error: "missing_session_cookies" }, { status: 400 });
+    return NextResponse.json(
+      { error: "missing_session_cookies" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -120,6 +120,9 @@ export async function GET(req: NextRequest) {
     return res;
   } catch (err) {
     console.error("Singpass callback failed:", err);
-    return NextResponse.json({ error: "token_exchange_failed" }, { status: 401 });
+    return NextResponse.json(
+      { error: "token_exchange_failed" },
+      { status: 401 },
+    );
   }
 }
