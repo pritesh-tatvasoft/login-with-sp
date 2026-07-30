@@ -17,4 +17,5 @@ export const singpassConfig = {
   redirectUri: required("SINGPASS_REDIRECT_URI"),
   rpSigningKeyJwk: required("SINGPASS_RP_SIGNING_KEY_JWK"),
   rpEncryptionKeyJwk: required("SINGPASS_RP_ENCRYPTION_KEY_JWK"),
+  scope: required("SINGPASS_SCOPE"),
 };

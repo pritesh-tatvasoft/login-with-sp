@@ -32,7 +32,7 @@ export async function GET() {
       code_challenge,
       nonce,
       state,
-      scope: "openid", // login-only for now; add MyInfo scopes later if needed
+      scope: singpassConfig.scope, // login-only for now; add MyInfo scopes later if needed
       // Mandatory for Login apps - describes what the user is authenticating
       // for, used by Singpass for anti-fraud purposes. Must be one of the
       // predefined enum values, and that value must be enabled for this app
