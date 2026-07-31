@@ -7,7 +7,10 @@ import {
   buildAuthorizationUrlWithPAR,
 } from "openid-client";
 import { getSingpassConfiguration } from "@/lib/singpassIssuer";
-import { getSingpassDPoPHandle } from "@/lib/singpassDPoP";
+import {
+  generateDPoPKeyForState,
+  getDPoPHandleForState,
+} from "@/lib/singpassDPoP";
 import { singpassConfig } from "@/lib/singpassConfig";
 
 // GET /api/auth/login
@@ -16,31 +19,28 @@ import { singpassConfig } from "@/lib/singpassConfig";
 // then return the Singpass /auth URL in JSON so the frontend can redirect
 // the browser - no sensitive params exposed in the URL.
 export async function GET() {
-  const configuration = await getSingpassConfiguration();
-  const dpopHandle = await getSingpassDPoPHandle();
-
   const code_verifier = randomPKCECodeVerifier();
   const code_challenge = await calculatePKCECodeChallenge(code_verifier);
   const state = randomState();
   const nonce = randomNonce();
 
+  const configuration = await getSingpassConfiguration();
+  await generateDPoPKeyForState(state);
+  const dpopHandle = getDPoPHandleForState(configuration, state);
+
   const redirectTo = await buildAuthorizationUrlWithPAR(
     configuration,
     {
+      response_type: "code",
       redirect_uri: singpassConfig.redirectUri,
       code_challenge_method: "S256",
       code_challenge,
       nonce,
       state,
       // login-only for now; add MyInfo scopes later if needed
-      scope: singpassConfig.scope, 
+      scope: singpassConfig.scope,
 
       // Mandatory for Login apps - describes what the user is authenticating
-      // for, used by Singpass for anti-fraud purposes. Must be one of the
-      // predefined enum values, and that value must be enabled for this app
-      // in the Singpass Developer Portal (App config > authentication context
-      // types) or you'll get "Requested authentication context type is not
-      // registered" even though the value itself is valid.
       authentication_context_type: singpassConfig.authContextType,
     },
     { DPoP: dpopHandle },

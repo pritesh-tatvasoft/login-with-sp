@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizationCodeGrant } from "openid-client";
 import { getSingpassConfiguration } from "@/lib/singpassIssuer";
-import { getSingpassDPoPHandle } from "@/lib/singpassDPoP";
+import {
+  getDPoPHandleForState,
+  removeDPoPKeyForState,
+} from "@/lib/singpassDPoP";
 import { singpassConfig } from "@/lib/singpassConfig";
 
 // GET /api/auth/callback
@@ -37,17 +40,16 @@ export async function GET(req: NextRequest) {
   // Defense in depth on top of whatever openid-client validates internally:
   // Singpass includes `iss` on both success and error redirects specifically
   // so clients can confirm the response actually came from the expected
-  // issuer before acting on it.
+  // issuer before acting on it. `iss` is mandatory - reject the response if it
+  // is missing or does not match the expected issuer.
   const returnedIss = currentUrl.searchParams.get("iss");
-  if (returnedIss) {
-    const configuration = await getSingpassConfiguration();
-    const expectedIss = configuration.serverMetadata().issuer;
-    if (returnedIss !== expectedIss) {
-      console.error(
-        `Singpass callback iss mismatch: expected ${expectedIss}, got ${returnedIss}`,
-      );
-      return NextResponse.json({ error: "unexpected_issuer" }, { status: 400 });
-    }
+  const configuration = await getSingpassConfiguration();
+  const expectedIss = configuration.serverMetadata().issuer;
+  if (returnedIss !== expectedIss) {
+    console.error(
+      `Singpass callback iss mismatch: expected ${expectedIss}, got ${returnedIss}`,
+    );
+    return NextResponse.json({ error: "unexpected_issuer" }, { status: 400 });
   }
 
   // Singpass redirected back with an Authentication Error Response
@@ -73,8 +75,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const configuration = await getSingpassConfiguration();
-    const dpopHandle = await getSingpassDPoPHandle();
+    const dpopHandle = getDPoPHandleForState(configuration, state);
+    if (!dpopHandle) {
+      throw new Error("missing_dpop_key");
+    }
 
     const tokens = await authorizationCodeGrant(
       configuration,
@@ -123,13 +127,15 @@ export async function GET(req: NextRequest) {
       },
     );
 
-    // Clean up the temporary login-flow cookies now that they've served their purpose
+    // Clean up the temporary login-flow cookies and per-session DPoP key
     res.cookies.delete("sp_verifier");
     res.cookies.delete("sp_state");
     res.cookies.delete("sp_nonce");
+    removeDPoPKeyForState(state);
 
     return res;
   } catch (err) {
+    removeDPoPKeyForState(state);
     console.error("Singpass callback failed:", err);
     return NextResponse.json(
       { error: "token_exchange_failed" },

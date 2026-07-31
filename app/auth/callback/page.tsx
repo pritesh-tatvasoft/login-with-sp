@@ -19,11 +19,18 @@ const ERROR_MESSAGES: Record<string, string> = {
   server_error: "Singpass encountered an error. Please try again.",
   temporarily_unavailable:
     "Singpass is temporarily unavailable. Please try again shortly.",
+  invalid_request: "We couldn't start the login request. Please try again.",
+  invalid_scope: "This login request isn't allowed for this app. Please try again.",
+  unauthorized_client: "This app isn't allowed to use Singpass. Please try again.",
+  unsupported_response_type: "This login request isn't supported. Please try again.",
+  login_required: "Please log in to Singpass and try again.",
+  interaction_required: "Please complete the Singpass login and try again.",
   unexpected_issuer:
     "This login response could not be verified. Please try again.",
   missing_session_cookies:
     "Your login session expired or cookies were blocked. Please try again.",
   token_exchange_failed: "We couldn't complete your login. Please try again.",
+  unknown_error: "Something went wrong during login. Please try again.",
 };
 
 function friendlyMessage(code: string | null): string {
