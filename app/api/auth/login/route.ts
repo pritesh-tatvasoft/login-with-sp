@@ -39,7 +39,6 @@ export async function GET() {
       state,
       // login-only for now; add MyInfo scopes later if needed
       scope: singpassConfig.scope,
-
       // Mandatory for Login apps - describes what the user is authenticating
       authentication_context_type: singpassConfig.authContextType,
     },
