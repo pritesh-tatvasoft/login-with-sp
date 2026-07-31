@@ -32,14 +32,16 @@ export async function GET() {
       code_challenge,
       nonce,
       state,
-      scope: singpassConfig.scope, // login-only for now; add MyInfo scopes later if needed
+      // login-only for now; add MyInfo scopes later if needed
+      scope: singpassConfig.scope, 
+
       // Mandatory for Login apps - describes what the user is authenticating
       // for, used by Singpass for anti-fraud purposes. Must be one of the
       // predefined enum values, and that value must be enabled for this app
       // in the Singpass Developer Portal (App config > authentication context
       // types) or you'll get "Requested authentication context type is not
       // registered" even though the value itself is valid.
-      authentication_context_type: "APP_AUTHENTICATION_DEFAULT",
+      authentication_context_type: singpassConfig.authContextType,
     },
     { DPoP: dpopHandle },
   );
