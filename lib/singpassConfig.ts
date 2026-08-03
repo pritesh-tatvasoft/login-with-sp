@@ -12,11 +12,11 @@ function required(name: string): string {
 }
 
 export const singpassConfig = {
-  issuer: required("SINGPASS_ISSUER"),
-  clientId: required("SINGPASS_CLIENT_ID"),
-  redirectUri: required("SINGPASS_REDIRECT_URI"),
-  rpSigningKeyJwk: required("SINGPASS_RP_SIGNING_KEY_JWK"),
-  rpEncryptionKeyJwk: required("SINGPASS_RP_ENCRYPTION_KEY_JWK"),
-  scope: required("SINGPASS_SCOPE"),
-  authContextType: required("SINGPASS_AUTH_CONTEXT_TYPE"),
+  issuer: required("SINGPASS_LOGIN_ISSUER_URL"),
+  clientId: required("SINGPASS_LOGIN_CLIENT_ID"),
+  redirectUri: required("SINGPASS_LOGIN_REDIRECT_URI"),
+  rpSigningKeyJwk: required("SINGPASS_LOGIN_SIGNING_PRIVATE_KEY"),
+  rpEncryptionKeyJwk: required("SINGPASS_LOGIN_ENCRYPTION_PRIVATE_KEY"),
+  scope: required("SINGPASS_LOGIN_SCOPE"),
+  authContextType: required("SINGPASS_LOGIN_AUTH_CONTEXT_TYPE"),
 };
